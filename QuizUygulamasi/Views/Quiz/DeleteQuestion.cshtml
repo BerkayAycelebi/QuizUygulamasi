@@ -1,0 +1,57 @@
+﻿@model QuizUygulamasi.Models.Question
+
+@{
+    ViewData["Title"] = "Soruyu Sil";
+}
+
+<h1>Soruyu Sil</h1>
+
+<h3>Silmek istediğinize emin misiniz?</h3>
+<div>
+    <h4>Soru</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Text)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Text)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.OptionA)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.OptionA)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.OptionB)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.OptionB)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.OptionC)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.OptionC)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.OptionD)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.OptionD)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CorrectAnswer)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CorrectAnswer)
+        </dd>
+    </dl>
+
+    <form asp-action="DeleteQuestion">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Sil" class="btn btn-danger" /> |
+        <a asp-action="Details" asp-route-id="@ViewBag.QuizId">Soru Listesine Dön</a>
+    </form>
+</div>

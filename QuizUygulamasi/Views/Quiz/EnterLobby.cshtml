@@ -1,0 +1,88 @@
+﻿@ViewBag.RoomCode
+@{
+    ViewData["Title"] = "Quiz Bekleme Odası";
+}
+
+<h1>@ViewBag.QuizId Numaralı Quiz Bekleme Odası</h1>
+
+@if (!string.IsNullOrEmpty(@ViewBag.RoomCode))
+{
+    <div>
+        <strong>Oda Kodu:</strong> <span id="roomCode">@ViewBag.RoomCode</span>
+    </div>
+}
+else
+{
+    <div>
+        <strong>Oda Kodu Oluşturuluyor...</strong>
+    </div>
+}
+
+<div>
+    <strong>Katılımcılar:</strong> <ul id="participantsList"></ul>
+    <span id="participantCount">0</span> kişi katıldı.
+</div>
+
+<button id="startButton" class="btn btn-success" style="display:none;">Yarışmayı Başlat</button>
+<!-- En son stabil sürümü kullanın -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/quizhub")
+        .build();
+
+    connection.on("JoinedRoom", function (username) {
+        console.log(`${username} odaya katıldı.`);
+    });
+
+    connection.on("ParticipantJoined", function (username, count) {
+        const list = document.getElementById("participantsList");
+        const existing = Array.from(list.children).some(li => li.textContent === username);
+        if (!existing) {
+            const li = document.createElement("li");
+            li.textContent = username;
+            list.appendChild(li);
+        }
+        document.getElementById("participantCount").innerText = count;
+    });
+    connection.on("ParticipantLeft", function (username, count) {
+        var list = document.getElementById("participantsList");
+        for (let i = 0; i < list.children.length; i++) {
+            if (list.children[i].textContent === username) {
+                list.removeChild(list.children[i]);
+                break;
+            }
+        }
+        document.getElementById("participantCount").innerText = count;
+    });
+
+    connection.on("EnableStartButton", function () {
+        document.getElementById("startButton").style.display = "block";
+    });
+
+    document.getElementById("startButton").addEventListener("click", function () {
+        const roomIdElement = document.getElementById("roomCode");
+        const roomCode = roomIdElement ? roomIdElement.innerText : "";
+        if (roomCode) {
+            connection.invoke("StartQuiz", roomCode).catch(function (err) {
+                return console.error(err.toString());
+            });
+        }
+    });
+
+    connection.start().then(function () {
+        console.log("SignalR Connected.");
+        const quizId = @ViewBag.QuizId;
+        if (!document.getElementById("roomCode")) {
+            connection.invoke("GenerateRoomCode", quizId)
+                .then(function (roomCode) {
+                    document.getElementById("roomCode").innerText = roomCode;
+                })
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+        }
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+</script>

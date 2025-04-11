@@ -1,0 +1,50 @@
+﻿@model QuizUygulamasi.Models.Quiz
+
+@{
+    ViewData["Title"] = @Model.Name + " Soruları";
+}
+
+<h1>@Model.Name Soruları</h1>
+
+<p>
+    <a asp-action="CreateQuestion" asp-route-quizId="@Model.Id">Yeni Soru Ekle</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Questions.FirstOrDefault().Text)
+            </th>
+            <th>Doğru Cevap</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Questions != null)
+        {
+            @foreach (var item in Model.Questions)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Text)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.CorrectAnswer)
+                    </td>
+                    <td>
+                        <a asp-action="EditQuestion" asp-route-id="@item.Id">Düzenle</a> |
+                        <a asp-action="DeleteQuestion" asp-route-id="@item.Id">Sil</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr><td colspan="3">Bu quizde henüz soru yok.</td></tr>
+        }
+    </tbody>
+</table>
+
+<div>
+    <a asp-action="Index">Quiz Listesine Dön</a>
+</div>

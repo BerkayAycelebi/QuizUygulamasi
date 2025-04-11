@@ -1,0 +1,157 @@
+﻿@{
+    ViewData["Title"] = "Quiz Oyunu";
+}
+
+<h1>Quiz Oyunu</h1>
+
+<div id="quizArea" style="display:none;">
+    <h3 id="questionText"></h3>
+    <p>Soru <span id="questionNumber"></span> / <span id="totalQuestions"></span></p>
+    <div class="form-group">
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="optionA" value="A">
+            <label class="form-check-label" for="optionA" id="labelOptionA"></label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="optionB" value="B">
+            <label class="form-check-label" for="optionB" id="labelOptionB"></label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="optionC" value="C">
+            <label class="form-check-label" for="optionC" id="labelOptionC"></label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="optionD" value="D">
+            <label class="form-check-label" for="optionD" id="labelOptionD"></label>
+        </div>
+    </div>
+    <button id="submitAnswer" class="btn btn-primary">Cevapla</button>
+    <div id="answerAlert" class="mt-2"></div>
+</div>
+
+<div id="leaderboardArea" style="display:none;">
+    <h3>Sıralama</h3>
+    <ol id="leaderboardList"></ol>
+    <button id="nextButton" class="btn btn-secondary">İleri</button>
+</div>
+
+<div id="finalLeaderboardArea" style="display:none;">
+    <h3>Yarışma Sonucu</h3>
+    <h4>İlk 5</h4>
+    <ol id="finalLeaderboardList"></ol>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("https://localhost:7038/quizhub", {
+            skipNegotiation: true,  // WebSocket için kritik
+            transport: signalR.HttpTransportType.WebSockets,
+            withCredentials: true  // Kimlik doğrulama için
+        })
+        .configureLogging(signalR.LogLevel.Information)  // Loglama seviyesini ayarlayın
+        .build();
+
+    const roomCode = "@ViewBag.RoomCode";
+    let currentQuestionIndex = 0;
+    let totalQuestionsCount = 0;
+
+    // Bağlantıyı başlatma fonksiyonu
+    async function startConnection() {
+        try {
+            await connection.start();
+            console.log("SignalR Connected to Play Page.");
+        } catch (err) {
+            console.error("Connection error:", err);
+            setTimeout(startConnection, 5000); // 5 sn sonra yeniden dene
+        }
+    }
+
+    startConnection(); // Bağlantıyı başlat
+
+    connection.on("QuizStarted", function (questionText, optionA, optionB, optionC, optionD, questionNumber, totalQuestions) {
+        document.getElementById("quizArea").style.display = "block";
+        document.getElementById("leaderboardArea").style.display = "none";
+        document.getElementById("questionText").innerText = questionText;
+        document.getElementById("labelOptionA").innerText = optionA;
+        document.getElementById("labelOptionB").innerText = optionB;
+        document.getElementById("labelOptionC").innerText = optionC;
+        document.getElementById("labelOptionD").innerText = optionD;
+        document.getElementById("questionNumber").innerText = questionNumber;
+        document.getElementById("totalQuestions").innerText = totalQuestions;
+        currentQuestionIndex = questionNumber;
+        totalQuestionsCount = totalQuestions;
+    });
+
+    connection.on("NextQuestion", function (questionText, optionA, optionB, optionC, optionD, questionNumber, totalQuestions) {
+        document.getElementById("quizArea").style.display = "block";
+        document.getElementById("leaderboardArea").style.display = "none";
+        document.getElementById("questionText").innerText = questionText;
+        document.getElementById("labelOptionA").innerText = optionA;
+        document.getElementById("labelOptionB").innerText = optionB;
+        document.getElementById("labelOptionC").innerText = optionC;
+        document.getElementById("labelOptionD").innerText = optionD;
+        document.getElementById("questionNumber").innerText = questionNumber;
+        document.getElementById("totalQuestions").innerText = totalQuestions;
+        currentQuestionIndex = questionNumber;
+        totalQuestionsCount = totalQuestions;
+        document.querySelectorAll('input[name="answer"]').forEach(radio => radio.checked = false);
+        document.getElementById("answerAlert").innerText = "";
+    });
+
+    connection.on("AnswerSubmitted", function () {
+        document.getElementById("submitAnswer").disabled = true;
+        document.getElementById("answerAlert").innerText = "Cevabınız gönderildi, sonuç bekleniyor...";
+    });
+
+    connection.on("CorrectAnswerRevealed", function (correctAnswer) {
+        document.getElementById("answerAlert").innerText = `Doğru Cevap: ${correctAnswer}`;
+    });
+
+    connection.on("ShowLeaderboard", function (leaderboard) {
+        document.getElementById("quizArea").style.display = "none";
+        document.getElementById("leaderboardArea").style.display = "block";
+        const leaderboardList = document.getElementById("leaderboardList");
+        leaderboardList.innerHTML = "";
+        leaderboard.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = `${item.Username} - Puan: ${item.Score}`;
+            leaderboardList.appendChild(li);
+        });
+        if (currentQuestionIndex < totalQuestionsCount) {
+            document.getElementById("nextButton").style.display = "block";
+        } else {
+            document.getElementById("nextButton").style.display = "none";
+        }
+    });
+
+    connection.on("ShowFinalLeaderboard", function (leaderboard) {
+        document.getElementById("leaderboardArea").style.display = "none";
+        document.getElementById("finalLeaderboardArea").style.display = "block";
+        const finalLeaderboardList = document.getElementById("finalLeaderboardList");
+        finalLeaderboardList.innerHTML = "";
+        leaderboard.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = `${item.Username} - Puan: ${item.Score}`;
+            finalLeaderboardList.appendChild(li);
+        });
+    });
+
+    document.getElementById("submitAnswer").addEventListener("click", function () {
+        const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+        if (selectedAnswer) {
+            connection.invoke("SubmitAnswer", roomCode, selectedAnswer.value).catch(function (err) {
+                return console.error(err.toString());
+            });
+        } else {
+            document.getElementById("answerAlert").innerText = "Lütfen bir cevap seçin.";
+        }
+    });
+
+    document.getElementById("nextButton").addEventListener("click", function () {
+        connection.invoke("StartQuestionTimer", roomCode).catch(function (err) {
+            return console.error(err.toString());
+        });
+    });
+
+</script>

@@ -1,0 +1,31 @@
+﻿@model IEnumerable<QuizUygulamasi.Models.Participant>
+
+@{
+    ViewData["Title"] = "Kullanıcı Email ve Sıralamaları";
+}
+
+<h1>Kullanıcı Email ve Sıralamaları</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Kullanıcı Adı</th>
+            <th>Email</th>
+            <th>Puan</th>
+            <th>Quiz Adı</th>
+            <th>Oda Kodu</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Username</td>
+                <td>@item.Email</td>
+                <td>@item.Score</td>
+                <td>@item.QuizRoom?.Quiz?.Name</td>
+                <td>@item.QuizRoom?.RoomCode</td>
+            </tr>
+        }
+    </tbody>
+</table>

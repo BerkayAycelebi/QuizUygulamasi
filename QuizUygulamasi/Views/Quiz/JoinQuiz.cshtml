@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Quize Katıl";
+}
+
+<h1>Quize Katıl</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <form id="joinForm">
+            <div class="form-group">
+                <label for="roomCode">Oda Kodu:</label>
+                <input type="text" id="roomCode" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label for="email">Email Adresiniz:</label>
+                <input type="email" id="email" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Katıl</button>
+            <div id="errorAlert" class="alert alert-danger mt-2" style="display:none;"></div>
+        </form>
+    </div>
+</div>
+<!-- En son stabil sürümü kullanın -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/quizhub")
+        .build();
+
+    connection.on("JoinedRoom", function (username) {
+        console.log(`Odaya ${username} olarak katıldınız.`);
+        // Burada quiz sayfasına yönlendirme yapılabilir. Şimdilik sadece konsola yazdırıyoruz.
+        window.location.href = `/Quiz/Play/${document.getElementById('roomCode').value}`; // Örnek yönlendirme
+    });
+
+    connection.on("Error", function (message) {
+        document.getElementById("errorAlert").innerText = message;
+        document.getElementById("errorAlert").style.display = "block";
+    });
+
+    document.getElementById("joinForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+        const roomCode = document.getElementById("roomCode").value.trim().toUpperCase();
+        const email = document.getElementById("email").value.trim();
+
+        if (roomCode && email) {
+            connection.start().then(function () {
+                connection.invoke("JoinRoom", roomCode, email).catch(function (err) {
+                    return console.error(err.toString());
+                });
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
+        } else {
+            document.getElementById("errorAlert").innerText = "Lütfen oda kodunu ve email adresinizi girin.";
+            document.getElementById("errorAlert").style.display = "block";
+        }
+    });
+</script>
